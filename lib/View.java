@@ -1,4 +1,5 @@
 package lib;
+
 public class View {
     int screenWidth, screenHeight;
     double xSlope, xOffset, ySlope, yOffset;
