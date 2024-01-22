@@ -114,7 +114,7 @@ public class Explorer extends JPanel implements MouseListener, KeyListener {
             repaint();
         }
         if (e.getKeyCode() == KeyEvent.VK_X) {
-            if (Mandelbrot.ITERATION_LIMIT != 1000) {
+            if (Mandelbrot.ITERATION_LIMIT != 500) {
                 Mandelbrot.ITERATION_LIMIT -= 1000;
                 repaint();
             }
