@@ -1,3 +1,4 @@
+package lib;
 public class Mandelbrot {
 
     public static int ITERATION_LIMIT = 1000;
