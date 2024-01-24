@@ -27,6 +27,7 @@ public class Explorer extends JPanel implements MouseListener, KeyListener {
         setBackground(Color.WHITE);
         addKeyListener(this);
         addMouseListener(this);
+        setFocusable(isFocusable());
     }
 
     public void paintComponent(Graphics g) {

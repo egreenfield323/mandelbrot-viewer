@@ -10,6 +10,7 @@ public class Runner {
         Explorer explorer = new Explorer();
         frame.getContentPane().add(explorer);
         frame.pack();
+        frame.setFocusable(true);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         frame.setResizable(false);
