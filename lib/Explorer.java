@@ -3,11 +3,16 @@ package lib;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import javax.swing.JPanel;
+import java.awt.image.BufferedImage;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Explorer extends JPanel implements MouseListener, KeyListener {
 
@@ -17,8 +22,13 @@ public class Explorer extends JPanel implements MouseListener, KeyListener {
     Complex topLeft = new Complex(-2, 1);
     Complex botRight = new Complex(1, -1);
     View view = new View(screenWidth, screenHeight);
-    View[] views = new View[1000];
-    int i = 0;
+
+    // Calculate the number of threads based on available processors
+    int numThreads = (int) (Runtime.getRuntime().availableProcessors() * 0.75);
+    ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
+
+    // Array holding images for each chunk
+    private BufferedImage[] chunkImages;
 
     public Explorer() {
         setPreferredSize(new Dimension(screenWidth, screenHeight));
@@ -31,17 +41,55 @@ public class Explorer extends JPanel implements MouseListener, KeyListener {
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
+
+        chunkImages = new BufferedImage[numThreads];
+        int chunkHeight = screenHeight / numThreads; // Divide the screen height into chunks
+
+        // Initialize the images for each chunk
+        for (int i = 0; i < numThreads; i++) {
+            chunkImages[i] = new BufferedImage(screenWidth, chunkHeight, BufferedImage.TYPE_INT_ARGB);
+        }
+
+        // Track when all tasks are complete
+        CountDownLatch latch = new CountDownLatch(numThreads);
+
+        // Submit rendering tasks for each chunk
+        for (int i = 0; i < numThreads; i++) {
+            final int startY = i * chunkHeight;
+            final int endY = (i == numThreads - 1) ? screenHeight : (i + 1) * chunkHeight;
+            final int chunkIndex = i;
+
+            // Submit a task for each chunk of the screen
+            executorService.submit(() -> {
+                renderChunk(chunkImages[chunkIndex], startY, endY);
+                latch.countDown(); // Decrease the latch count once task is complete
+            });
+        }
+
+        try {
+            latch.await(); // Wait until all chunks are rendered
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        for (int i = 0; i < numThreads; i++) {
+            g.drawImage(chunkImages[i], 0, i * (screenHeight / numThreads), null);
+        }
+    }
+
+    private void renderChunk(BufferedImage image, int startY, int endY) {
+        Graphics2D g = image.createGraphics();
         for (int x = 0; x < screenWidth; x++) {
-            for (int y = 0; y < screenHeight; y++) {
-                view = new View(screenWidth, screenHeight);
+            for (int y = startY; y < endY; y++) {
                 view.setComplexCorners(topLeft, botRight);
                 Complex c = view.translate(x, y);
                 int colorVal = Mandelbrot.testPoint(c);
                 Color color = mapColor(colorVal);
                 g.setColor(color);
-                g.fillRect(x, y, 1, 1);
+                g.fillRect(x, y - startY, 1, 1);
             }
         }
+        g.dispose();
     }
 
     private Color mapColor(int n) {
@@ -57,7 +105,6 @@ public class Explorer extends JPanel implements MouseListener, KeyListener {
                 greenD = percentDone * 255;
             }
         } else {
-
             greenD = 500 * (percentDone);
             double blueD = 1250 * (percentDone);
             blue = (int) blueD;
@@ -96,7 +143,6 @@ public class Explorer extends JPanel implements MouseListener, KeyListener {
         double selectedWidth = dragEnd.getR() - topLeft.getR();
         double selectedHeight = dragEnd.getI() - topLeft.getI();
 
-        // Maintain the aspect ratio of the view
         double aspectRatio = (double) screenWidth / screenHeight;
 
         if (Math.abs(selectedWidth / selectedHeight) > aspectRatio) {
@@ -104,12 +150,8 @@ public class Explorer extends JPanel implements MouseListener, KeyListener {
         } else {
             selectedWidth = selectedHeight * aspectRatio;
         }
-
         botRight = new Complex(topLeft.getR() + selectedWidth, topLeft.getI() + selectedHeight);
-
         view.setComplexCorners(topLeft, botRight);
-        views[i] = view;
-        i++;
         repaint();
     }
 
@@ -145,4 +187,7 @@ public class Explorer extends JPanel implements MouseListener, KeyListener {
     public void keyReleased(KeyEvent e) {
     }
 
+    public void shutdown() {
+        executorService.shutdown();
+    }
 }
