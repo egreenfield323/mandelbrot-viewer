@@ -3,24 +3,22 @@ package lib;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import javax.swing.JPanel;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import javax.swing.JPanel;
 
 public class Explorer extends JPanel implements MouseListener, KeyListener {
 
-    int screenWidth = 600;
-    int screenHeight = 400;
+    int screenWidth = 1280;
+    int screenHeight = 720;
 
     Complex topLeft = new Complex(-2, 1);
     Complex botRight = new Complex(1, -1);
     View view = new View(screenWidth, screenHeight);
-    View[] views = new View[500];
+    View[] views = new View[1000];
     int i = 0;
-    Complex[] botR = new Complex[500];
-    Complex[] topL = new Complex[500];
 
     public Explorer() {
         setPreferredSize(new Dimension(screenWidth, screenHeight));
@@ -30,6 +28,7 @@ public class Explorer extends JPanel implements MouseListener, KeyListener {
         setFocusable(isFocusable());
     }
 
+    @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         for (int x = 0; x < screenWidth; x++) {
@@ -48,7 +47,7 @@ public class Explorer extends JPanel implements MouseListener, KeyListener {
     private Color mapColor(int n) {
         double percentDone = (double) n / Mandelbrot.ITERATION_LIMIT;
         double redD, greenD;
-        greenD = 0;
+
         int blue = (int) (Math.pow(percentDone, 4) * 255);
         if (percentDone > 0.2) {
             redD = 150 + (60 * Math.sin(percentDone * 60));
@@ -76,6 +75,7 @@ public class Explorer extends JPanel implements MouseListener, KeyListener {
         return new Color(red, green, blue);
     }
 
+    @Override
     public void mouseClicked(MouseEvent e) {
     }
 
@@ -90,16 +90,34 @@ public class Explorer extends JPanel implements MouseListener, KeyListener {
     public void mouseReleased(MouseEvent e) {
         int mouseX = e.getX();
         int mouseY = e.getY();
-        botRight = view.translate(mouseX, mouseY);
+
+        Complex dragEnd = view.translate(mouseX, mouseY);
+
+        double selectedWidth = dragEnd.getR() - topLeft.getR();
+        double selectedHeight = dragEnd.getI() - topLeft.getI();
+
+        // Maintain the aspect ratio of the view
+        double aspectRatio = (double) screenWidth / screenHeight;
+
+        if (Math.abs(selectedWidth / selectedHeight) > aspectRatio) {
+            selectedHeight = selectedWidth / aspectRatio;
+        } else {
+            selectedWidth = selectedHeight * aspectRatio;
+        }
+
+        botRight = new Complex(topLeft.getR() + selectedWidth, topLeft.getI() + selectedHeight);
+
         view.setComplexCorners(topLeft, botRight);
         views[i] = view;
         i++;
         repaint();
     }
 
+    @Override
     public void mouseEntered(MouseEvent e) {
     }
 
+    @Override
     public void mouseExited(MouseEvent e) {
     }
 

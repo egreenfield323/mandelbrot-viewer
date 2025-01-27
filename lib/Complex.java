@@ -52,7 +52,7 @@ public class Complex {
         double is = this.i * that.i;
         double cross1 = this.r * this.i;
         double cross2 = this.i * that.r;
-        double imag = 0;
+        double imag;
         double real = cross1 + cross2;
         if (rs < 0 && is < 0) {
             imag = rs + is;
@@ -88,12 +88,10 @@ public class Complex {
     }
 
     public boolean equals(Complex that) {
-        if (this.r == that.r && this.i == that.i) {
-            return true;
-        }
-        return false;
+        return this.r == that.r && this.i == that.i;
     }
 
+    @Override
     public String toString() {
         return String.format("%.2f + %.2fi", this.r, this.i);
     }

@@ -1,6 +1,6 @@
 package lib;
 
-public class View {
+public final class View {
     int screenWidth, screenHeight;
     double xSlope, xOffset, ySlope, yOffset;
 
